@@ -30,29 +30,17 @@ jobs:
       - name: Deploy to Cloud Run
         id: deploy
         run: |
-          # 將 secret 寫入檔案
-          echo "${{ secrets.GCP_SA_KEY }}" > sa-key.json
-
-          # 啟用 service account
-          gcloud auth activate-service-account --key-file="sa-key.json"
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-
-          # 部署到 Cloud Run
           gcloud run deploy python-webapp \
             --image ghcr.io/${{ github.repository }}/python-webapp:latest \
             --region=asia-east1 \
             --platform=managed \
             --allow-unauthenticated
 
-          # 取得服務 URL
           SERVICE_URL=$(gcloud run services describe python-webapp \
             --region=asia-east1 \
             --format='value(status.url)')
           echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
           echo "🌍 Cloud Run Service URL: $SERVICE_URL"
-
-        shell: bash
-
 
       - name: 🩺 Health Check
         run: |
