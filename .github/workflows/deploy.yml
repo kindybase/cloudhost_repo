@@ -27,11 +27,14 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Deploy to Cloud Run
-        id: deploy
-        run: |
-          # 設定 gcloud 認證使用 service account
-          gcloud auth activate-service-account --key-file="${{ secrets.GCP_SA_KEY }}"
+     - name: Deploy to Cloud Run
+       id: deploy
+       run: |
+          # 將 secret 寫入檔案
+          echo "${{ secrets.GCP_SA_KEY }}" > sa-key.json
+
+          # 啟用 service account
+          gcloud auth activate-service-account --key-file="sa-key.json"
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
           # 部署到 Cloud Run
@@ -47,6 +50,8 @@ jobs:
             --format='value(status.url)')
           echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
           echo "🌍 Cloud Run Service URL: $SERVICE_URL"
+
+     shell: bash
 
       - name: 🩺 Health Check
         run: |
