@@ -7,15 +7,6 @@ on:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
-name: CI/CD to Cloud Run
-
-on:
-  push:
-    branches: ["main"]
-
-jobs:
-  build-deploy:
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repo
@@ -62,71 +53,6 @@ jobs:
 
         shell: bash
 
-
-      - name: 🩺 Health Check
-        run: |
-          echo "🔎 Checking if service is responding..."
-          HEALTH_URL="${{ steps.deploy.outputs.service_url }}"
-          for i in {1..10}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
-            if [ "$STATUS" -eq 200 ]; then
-              echo "✅ Health check passed! (HTTP $STATUS)"
-              exit 0
-            else
-              echo "⏳ Attempt $i: Service not ready yet (HTTP $STATUS)"
-              sleep 10
-            fi
-          done
-          echo "❌ Service failed health check after 10 attempts."
-          exit 1
-
-      - name: 🌐 Display Deployed URL
-        run: echo "✅ Cloud Run deployed successfully at ${{ steps.deploy.outputs.service_url }}"
-
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-
-      - name: Authenticate to GHCR
-        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Build Docker image
-        run: docker build -t ghcr.io/${{ github.repository }}/python-webapp:latest -f Dockerfile.safe .
-
-      - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository }}/python-webapp:latest
-
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-
-     - name: Deploy to Cloud Run
-       id: deploy
-       run: |
-          # 將 secret 寫入檔案
-          echo "${{ secrets.GCP_SA_KEY }}" > sa-key.json
-
-          # 啟用 service account
-          gcloud auth activate-service-account --key-file="sa-key.json"
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-
-          # 部署到 Cloud Run
-          gcloud run deploy python-webapp \
-            --image ghcr.io/${{ github.repository }}/python-webapp:latest \
-            --region=asia-east1 \
-            --platform=managed \
-            --allow-unauthenticated
-
-          # 取得服務 URL
-          SERVICE_URL=$(gcloud run services describe python-webapp \
-            --region=asia-east1 \
-            --format='value(status.url)')
-          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
-          echo "🌍 Cloud Run Service URL: $SERVICE_URL"
-
-     shell: bash
 
       - name: 🩺 Health Check
         run: |
