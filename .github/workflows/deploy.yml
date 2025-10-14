@@ -35,3 +35,31 @@ jobs:
             --platform=managed \
             --allow-unauthenticated
 
+          echo "✅ Deployment complete!"
+          
+          SERVICE_URL=$(gcloud run services describe ${{ env.IMAGE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "🌍 Cloud Run Service URL: $SERVICE_URL"
+
+      - name: 🩺 Health Check
+        run: |
+          echo "🔎 Checking if service is responding..."
+          HEALTH_URL="${{ steps.deploy.outputs.service_url }}"
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
+            if [ "$STATUS" -eq 200 ]; then
+              echo "✅ Health check passed! (HTTP $STATUS)"
+              exit 0
+            else
+              echo "⏳ Attempt $i: Service not ready yet (HTTP $STATUS)"
+              sleep 10
+            fi
+          done
+          echo "❌ Service failed health check after 10 attempts."
+          exit 1
+
+      - name: 🌐 Display Deployed URL
+        run: echo "✅ Cloud Run deployed successfully at ${{ steps.deploy.outputs.service_url }}"
+
