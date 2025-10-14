@@ -1,0 +1,67 @@
+name: pip-safe-install
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/requirements.txt'
+
+jobs:
+  safe-pip-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 👤 Create non-root user & isolated tmp
+        run: |
+          sudo useradd -m -s /bin/bash ciuser || true
+          sudo mkdir -p /home/ciuser/work /home/ciuser/tmp_pip
+          sudo chown -R ciuser:ciuser /home/ciuser
+          sudo chmod 700 /home/ciuser/tmp_pip
+
+      - name: 📦 Download dependencies (no install yet)
+        run: |
+          sudo -u ciuser bash -c '
+            python3 -m venv /home/ciuser/venv
+            source /home/ciuser/venv/bin/activate
+            export TMPDIR=/home/ciuser/tmp_pip
+            mkdir -p /home/ciuser/work/downloaded_packages
+            pip install --upgrade pip setuptools wheel
+            pip download -r requirements.txt -d /home/ciuser/work/downloaded_packages
+          '
+
+      - name: 🔍 Run safety check on downloaded packages
+        run: |
+          sudo -u ciuser bash -c '
+            source /home/ciuser/venv/bin/activate
+            python3 detect_pip_symlink_and_traversal.py /home/ciuser/work/downloaded_packages
+          '
+
+      - name: 🚫 Fail if suspicious files found
+        run: |
+          if [ -f /home/ciuser/work/downloaded_packages/SCAN_FAILED ]; then
+            echo "❌ 檢測到可疑 symlink 或 path traversal，停止安裝。"
+            cat /home/ciuser/work/downloaded_packages/SCAN_FAILED
+            exit 1
+          fi
+
+      - name: ✅ Safe install (non-root)
+        run: |
+          sudo -u ciuser bash -c '
+            source /home/ciuser/venv/bin/activate
+            export TMPDIR=/home/ciuser/tmp_pip
+            pip install --no-cache-dir -r requirements.txt
+          '
+
+      - name: 🧭 Optional SCA scan placeholder
+        run: |
+          echo "🔒 (可在此加入 Trivy / Snyk 等安全掃描)"
+

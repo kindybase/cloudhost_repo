@@ -1,0 +1,37 @@
+name: CI/CD to Cloud Run
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t ghcr.io/${{ github.repository }}/python-webapp:latest .
+
+      - name: Push Docker image
+        run: docker push ghcr.io/${{ github.repository }}/python-webapp:latest
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy python-webapp \
+            --image ghcr.io/${{ github.repository }}/python-webapp:latest \
+            --region=asia-east1 \
+            --platform=managed \
+            --allow-unauthenticated
+

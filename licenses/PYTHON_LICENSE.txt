@@ -1,0 +1,18 @@
+PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
+
+Copyright (c) 2001-2025 Python Software Foundation. All Rights Reserved.
+
+1. This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), 
+   and the Individual or Organization ("Licensee") accessing and otherwise 
+   using this software in source or binary form.
+
+2. Subject to the terms and conditions of this License Agreement, PSF hereby
+   grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
+   analyze, test, perform, and/or otherwise use Python alone or in any derivative 
+   version.
+
+3. This license is granted provided that Licensee reproduces the above copyright 
+   notice, this list of conditions, and the disclaimer in each copy.
+
+DISCLAIMER
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.

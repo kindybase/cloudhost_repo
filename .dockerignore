@@ -1,0 +1,47 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# .gitignore history version
+.gitignore2
+
+# .dockerignore history version
+.dockerignore2
+
+# Distribution / packaging
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+env/
+ENV/
+venv/
+
+# Test / cache
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Git metadata (不需要進 Docker image)
+.git
+.gitignore
+
+# IDE / editor
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+

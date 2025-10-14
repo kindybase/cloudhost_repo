@@ -1,0 +1,14 @@
+Alpine Linux Distribution
+
+Alpine Linux is a community developed operating system released under various
+open source licenses, primarily the MIT license, with some packages under GPL
+or other OSI-approved licenses.
+
+Key components:
+- musl C library (MIT)
+- BusyBox (GPLv2)
+- Alpine base system scripts (MIT)
+
+See individual package directories in Alpine for full license texts.
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
