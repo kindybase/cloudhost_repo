@@ -33,7 +33,7 @@ jobs:
           # 設定 gcloud 認證使用 service account
           gcloud auth activate-service-account --key-file="${{ secrets.GCP_SA_KEY }}"
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-        
+
           # 部署到 Cloud Run
           gcloud run deploy python-webapp \
             --image ghcr.io/${{ github.repository }}/python-webapp:latest \
@@ -41,10 +41,9 @@ jobs:
             --platform=managed \
             --allow-unauthenticated
 
-          echo "✅ Deployment complete!"
-          
-          SERVICE_URL=$(gcloud run services describe ${{ env.IMAGE_NAME }} \
-            --region=${{ env.REGION }} \
+          # 取得服務 URL
+          SERVICE_URL=$(gcloud run services describe python-webapp \
+            --region=asia-east1 \
             --format='value(status.url)')
           echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
           echo "🌍 Cloud Run Service URL: $SERVICE_URL"
