@@ -21,7 +21,7 @@ jobs:
     - name: Build and push Docker image
       run: |
         IMAGE="asia-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.REPO_NAME }}/app:${{ github.sha }}"
-        docker build -t "$IMAGE" .
+        docker build -t "$IMAGE" -f Dockerfile.safe .
         docker push "$IMAGE"
       env:
         PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
