@@ -1,43 +1,53 @@
-name: Deploy to Cloud Run
+name: CI/CD to Cloud Run
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  deploy:
+  build-deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-    - name: Set up gcloud
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
+      - name: Authenticate to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-    - name: Build and push Docker image
-      run: |
-        IMAGE="asia-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.REPO_NAME }}/app:${{ github.sha }}"
-        docker build -t "$IMAGE" -f Dockerfile.safe .
-        docker push "$IMAGE"
-      env:
-        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      - name: Build Docker image
+        run: docker build -t ghcr.io/${{ github.repository }}/python-webapp:latest -f Dockerfile.safe .
 
-    - name: Deploy to Cloud Run
-      run: |
-        gcloud run deploy ${{ secrets.SERVICE_NAME }} \
-          --image "asia-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.REPO_NAME }}/app:${{ github.sha }}" \
-          --region ${{ secrets.GCP_REGION }} \
-          --platform managed \
-          --allow-unauthenticated
+      - name: Push Docker image
+        run: docker push ghcr.io/${{ github.repository }}/python-webapp:latest
 
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
 
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          # 設定 gcloud 認證使用 service account
+          # gcloud auth activate-service-account --key-file="${{ secrets.GCP_SA_KEY }}"
+          gcloud auth activate-service-account gh-actions-deployer@myprjex8-20251013.iam.gserviceaccount.com --key-file="${{ secrets.GCP_SA_KEY }}"
 
-          SERVICE_URL=$(gcloud run services describe python-webapp \
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+        
+          # 部署到 Cloud Run
+          gcloud run deploy python-webapp \
+            --image ghcr.io/${{ github.repository }}/python-webapp:latest \
             --region=asia-east1 \
+            --platform=managed \
+            --allow-unauthenticated
+
+          echo "✅ Deployment complete!"
+          
+          SERVICE_URL=$(gcloud run services describe ${{ env.IMAGE_NAME }} \
+            --region=${{ env.REGION }} \
             --format='value(status.url)')
           echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
           echo "🌍 Cloud Run Service URL: $SERVICE_URL"
@@ -61,6 +71,4 @@ jobs:
 
       - name: 🌐 Display Deployed URL
         run: echo "✅ Cloud Run deployed successfully at ${{ steps.deploy.outputs.service_url }}"
-
-
 
